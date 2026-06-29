@@ -1,0 +1,8 @@
+{
+  "appId": "com.techtoolmaker.wobble",
+  "appName": "Wobble",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  }
+}

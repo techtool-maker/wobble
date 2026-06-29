@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#efe9f7" />
+<title>Wobble — Made to bend your mind</title>
+<style>
+  :root{
+    --bg1:#f3eefb; --bg2:#fbeef0; --bg3:#eef6f7;
+    --ink:#3b3550; --ink-soft:#7a738f;
+    --card:#fffdfb; --line:rgba(90,80,120,.16);
+    --accent:#7bb0a8; --accent-deep:#4f8a82;
+    --lit:#f4b46b; --lit-glow:#ffd9a0; --dark:#d8d2e4; --wrong:#e89baa;
+    --google:#ea4335; --facebook:#1877f2; --guest:#8b80a6;
+    --shadow:0 18px 50px rgba(80,60,120,.18); --radius:26px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--ink);
+    background:radial-gradient(120% 80% at 20% 0%,var(--bg1) 0%,transparent 60%),
+      radial-gradient(120% 80% at 90% 20%,var(--bg2) 0%,transparent 55%),
+      linear-gradient(160deg,var(--bg1),var(--bg3));
+    display:flex;align-items:center;justify-content:center;min-height:100%;overflow:hidden;
+  }
+  #app{position:relative;width:100%;max-width:440px;height:100dvh;max-height:920px;
+    background:linear-gradient(170deg,#fbf8ff,#f4eef9);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;
+    transition:opacity .5s ease;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);}
+  .screen.active{opacity:1;pointer-events:auto;}
+
+  .logo{font-size:58px;font-weight:800;letter-spacing:-2px;
+    background:linear-gradient(120deg,var(--accent-deep),var(--lit));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:wob 6s ease-in-out infinite;text-align:center;}
+  @keyframes wob{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-4px)}}
+  .tag{font-size:15px;color:var(--ink-soft);letter-spacing:.5px;text-align:center;margin-top:-2px;}
+
+  /* LOGIN */
+  #screen-login{align-items:center;justify-content:center;text-align:center;padding:32px;gap:8px;}
+  .login-sub{margin-top:18px;font-size:13px;color:var(--ink-soft);max-width:260px;line-height:1.5;}
+  .login-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:300px;margin-top:24px;}
+  .sbtn{display:flex;align-items:center;gap:12px;justify-content:center;border:1px solid var(--line);
+    background:var(--card);border-radius:16px;padding:14px;font-size:15px;font-weight:600;color:var(--ink);
+    cursor:pointer;transition:transform .12s,box-shadow .2s;}
+  .sbtn:active{transform:scale(.97);}
+  .sbtn .ic{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:13px;font-weight:800;}
+  .sbtn.google .ic{background:var(--google);} .sbtn.facebook .ic{background:var(--facebook);}
+  .sbtn.guest .ic{background:var(--guest);}
+  .login-legal{font-size:10.5px;color:var(--ink-soft);margin-top:18px;max-width:280px;line-height:1.5;opacity:.85;}
+
+  /* START */
+  #screen-start{align-items:center;justify-content:center;text-align:center;padding:32px;gap:6px;}
+  .prof-bubble{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:20px;
+    padding:16px 18px;max-width:300px;font-size:13.5px;line-height:1.55;color:var(--ink);
+    box-shadow:0 8px 22px rgba(80,60,120,.08);font-style:italic;}
+  .prof-name{display:block;font-style:normal;font-weight:700;font-size:11px;color:var(--accent-deep);
+    letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;}
+  .who-row{display:flex;align-items:center;gap:8px;margin-top:18px;font-size:12px;color:var(--ink-soft);}
+  .avatar{width:26px;height:26px;border-radius:50%;color:#fff;font-weight:800;font-size:12px;
+    display:flex;align-items:center;justify-content:center;}
+  .signout{color:var(--accent-deep);cursor:pointer;text-decoration:underline;}
+  .start-note{margin-top:14px;font-size:12px;color:var(--ink-soft);max-width:280px;line-height:1.5;}
+
+  .btn{border:none;cursor:pointer;font-family:inherit;font-weight:600;border-radius:16px;padding:14px 26px;
+    font-size:15px;transition:transform .12s,box-shadow .2s;}
+  .btn:active{transform:scale(.96);}
+  .btn-primary{background:linear-gradient(120deg,var(--accent),var(--accent-deep));color:#fff;
+    box-shadow:0 10px 24px rgba(79,138,130,.35);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+  .btn-row{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;justify-content:center;}
+
+  /* GAME */
+  #screen-game{padding:14px 16px 18px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .stage-meta{display:flex;flex-direction:column;line-height:1.15;}
+  .tier-label{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-deep);font-weight:700;}
+  .stage-name{font-size:18px;font-weight:800;}
+  .stage-count{font-size:11px;color:var(--ink-soft);}
+  .top-right{display:flex;align-items:center;gap:6px;}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 9px;font-size:11px;
+    color:var(--ink-soft);display:flex;align-items:center;gap:5px;cursor:pointer;}
+  .pill b{color:var(--ink);}
+  .icon-btn{width:34px;height:34px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+    font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .icon-btn.off{opacity:.4;}
+
+  .host{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px 15px;
+    font-size:13.5px;line-height:1.5;color:var(--ink);min-height:54px;box-shadow:0 6px 16px rgba(80,60,120,.06);}
+  .host .who{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-deep);font-weight:700;
+    margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+  .host .who .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);}
+  .host .who .dot.speaking{animation:pulse .5s infinite;}
+  @keyframes pulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+  .host-line{white-space:pre-line;}
+
+  .goal-row{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--ink-soft);}
+  .goal-mini{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px;}
+
+  .board-wrap{flex:1;display:flex;align-items:center;justify-content:center;margin:6px 0;}
+  #board{width:100%;max-width:330px;transition:transform .5s cubic-bezier(.3,1.4,.5,1);}
+  #board.folded{animation:foldwobble 1.1s ease;}
+  @keyframes foldwobble{0%{transform:perspective(600px) rotateX(0)}30%{transform:perspective(600px) rotateX(22deg) scale(.94)}60%{transform:perspective(600px) rotateX(-10deg) scale(1.02)}100%{transform:none}}
+  .node{cursor:pointer;transition:fill .3s,stroke .3s,r .25s;}
+  .link{stroke:var(--line);stroke-width:.9;}
+  .link.wrap{stroke:var(--accent);stroke-dasharray:2 2;opacity:.7;}
+  .board-msg{text-align:center;font-size:12px;color:var(--ink-soft);min-height:18px;margin-top:2px;}
+
+  .controls{display:flex;gap:10px;margin-top:8px;}
+  .controls .btn{flex:1;padding:13px;}
+  .hint-fab{display:flex;align-items:center;justify-content:center;gap:7px;
+    background:linear-gradient(120deg,#f6c98a,#f4b46b);color:#5b4326;box-shadow:0 10px 22px rgba(244,180,107,.4);}
+  .hint-fab.ad::after{content:'▷';font-size:11px;background:rgba(255,255,255,.6);border-radius:50%;
+    width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;}
+
+  .overlay{position:absolute;inset:0;background:rgba(60,50,80,.34);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;padding:26px;z-index:30;}
+  .overlay.show{display:flex;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{background:var(--card);border-radius:22px;padding:24px;width:100%;max-width:340px;text-align:center;
+    box-shadow:var(--shadow);animation:rise .4s cubic-bezier(.2,1.2,.3,1);}
+  @keyframes rise{from{transform:translateY(40px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+  .sheet h3{margin:.2em 0 .4em;font-size:20px;} .sheet p{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:.3em 0 1em;}
+  .ad-quote{font-style:italic;font-size:12.5px;color:var(--accent-deep);margin-bottom:14px;}
+  .ad-fake{height:120px;border-radius:14px;background:repeating-linear-gradient(45deg,#efe7f7,#efe7f7 12px,#e7ddf2 12px,#e7ddf2 24px);
+    display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink-soft);margin-bottom:14px;}
+  .link-tiny{display:block;margin-top:12px;font-size:12px;color:var(--accent-deep);cursor:pointer;text-decoration:underline;}
+
+  .burst{position:relative;width:90px;height:90px;margin:0 auto 6px;}
+  .burst .core{position:absolute;inset:0;border-radius:50%;
+    background:radial-gradient(circle,var(--lit-glow),var(--lit));animation:pop .6s cubic-bezier(.2,1.5,.4,1);}
+  @keyframes pop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+  .spark{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;}
+
+  .cert{background:linear-gradient(160deg,#fffdf8,#f5eefb);border:2px solid var(--lit);border-radius:18px;padding:22px 20px;}
+  .cert .seal{font-size:34px;}
+  .cert .ttl{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--accent-deep);font-weight:800;margin:6px 0;}
+  .cert .arch{font-size:24px;font-weight:800;background:linear-gradient(120deg,var(--accent-deep),var(--lit));
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .cert .meta{font-size:11.5px;color:var(--ink-soft);margin-top:8px;line-height:1.6;}
+  .cert .quote{font-style:italic;font-size:12.5px;margin-top:12px;color:var(--ink);}
+  .dev{position:absolute;bottom:6px;right:10px;font-size:10px;color:var(--ink-soft);opacity:.55;cursor:pointer;z-index:5;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LOGIN -->
+  <section id="screen-login" class="screen active">
+    <div class="logo">Wobble</div>
+    <div class="tag">Made to bend your mind</div>
+    <div class="login-sub">Sign in so Professor Wobble can track which 5% you belong to.</div>
+    <div class="login-btns">
+      <button class="sbtn google" data-prov="google"><span class="ic">G</span> Continue with Google</button>
+      <button class="sbtn facebook" data-prov="facebook"><span class="ic">f</span> Continue with Facebook</button>
+      <button class="sbtn guest" data-prov="guest"><span class="ic">?</span> Continue as Guest</button>
+    </div>
+    <div class="login-legal">Prototype build — social sign-in is simulated locally for testing. No real account is contacted and nothing leaves your device.</div>
+  </section>
+
+  <!-- START -->
+  <section id="screen-start" class="screen">
+    <div class="logo">Wobble</div>
+    <div class="tag">Made to bend your mind</div>
+    <div class="prof-bubble" id="startBubble"><span class="prof-name">Professor Wobble</span><span id="startGreet">…</span></div>
+    <div class="who-row"><span class="avatar" id="startAvatar">?</span><span>Signed in as <b id="startName">Guest</b></span><span class="signout" id="signOutLink">sign out</span></div>
+    <div class="start-note">4 representative stages from across the 5 cognitive tiers. Tap a node to toggle it — everything is connected.</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="beginBtn">Begin →</button>
+      <button class="btn btn-ghost" id="pickBtn">Jump to a stage</button>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen">
+    <div class="topbar">
+      <div class="stage-meta">
+        <span class="tier-label" id="tierLabel">Tier 1 · Logic</span>
+        <span class="stage-name" id="stageName">Hello, Brain</span>
+        <span class="stage-count" id="stageCount">Stage 1 of 100</span>
+      </div>
+      <div class="top-right">
+        <div class="pill" id="hintPill">💡 <b id="hintCount">5</b></div>
+        <button class="icon-btn" id="voiceBtn" title="Professor's voice">🗣️</button>
+        <button class="icon-btn" id="soundBtn" title="Music">🔊</button>
+        <button class="icon-btn" id="menuBtn" title="Stages">≡</button>
+      </div>
+    </div>
+
+    <div class="host">
+      <div class="who"><span class="dot" id="hostDot"></span>Professor Wobble</div>
+      <div class="host-line" id="hostLine">…</div>
+    </div>
+
+    <div class="goal-row" id="goalRow"><span>Goal:</span><span id="goalText">light every node</span></div>
+
+    <div class="board-wrap"><svg id="board" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="board-msg" id="boardMsg"></div>
+
+    <div class="controls">
+      <button class="btn btn-ghost" id="resetBtn">↺ Reset</button>
+      <button class="btn hint-fab" id="hintBtn">💡 Hint</button>
+    </div>
+    <div class="dev" id="devSkip">dev ▸ skip</div>
+  </section>
+
+  <div class="overlay" id="adOverlay"><div class="sheet">
+    <h3>Need a nudge?</h3>
+    <div class="ad-quote">“Even I peek sometimes.” — Prof. Wobble</div>
+    <div class="ad-fake" id="adFake">Watch a short clip for a hint</div>
+    <button class="btn btn-primary" id="adWatch" style="width:100%">▷ Watch a short clip</button>
+    <span class="link-tiny" id="adClose">Not now</span>
+    <span class="link-tiny" id="adIap">Tired of ads? Get the Hint Pack →</span>
+  </div></div>
+
+  <div class="overlay" id="hintOverlay"><div class="sheet">
+    <h3 id="hintTitle">Hint 1</h3>
+    <p id="hintText" style="font-style:italic;color:var(--ink);"></p>
+    <button class="btn btn-primary" id="hintClose" style="width:100%">Got it</button>
+  </div></div>
+
+  <div class="overlay" id="winOverlay"><div class="sheet">
+    <div class="burst"><div class="core"></div></div>
+    <h3 id="winTitle">Cleared!</h3>
+    <p id="winText"></p>
+    <button class="btn btn-primary" id="winNext" style="width:100%">Continue →</button>
+  </div></div>
+
+  <div class="overlay" id="certOverlay"><div class="sheet">
+    <div class="cert">
+      <div class="seal">🏅</div>
+      <div class="ttl">Certificate of Cognitive Excellence</div>
+      <div style="font-size:12px;color:var(--ink-soft)" id="certWho">This mind is certified</div>
+      <div class="arch" id="certArch">The Strategic Maverick</div>
+      <div class="meta" id="certMeta"></div>
+      <div class="quote" id="certQuote">“…Well. Look at you.” — Professor Wobble</div>
+    </div>
+    <div class="btn-row" style="margin-top:18px">
+      <button class="btn btn-primary" id="certShare">Share</button>
+      <button class="btn btn-ghost" id="certRestart">Play again</button>
+    </div>
+  </div></div>
+
+  <div class="overlay" id="pickOverlay"><div class="sheet">
+    <h3>Choose a stage</h3>
+    <p>Prototype includes one stage from across the tiers.</p>
+    <div id="pickList" style="display:flex;flex-direction:column;gap:8px"></div>
+    <span class="link-tiny" id="pickClose">Close</span>
+  </div></div>
+
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+
+/* ===================== AUDIO CONTEXT ===================== */
+let actx=null;
+function ensureAudio(){
+  if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); }
+  if(actx.state==='suspended') actx.resume();
+  Jazz.init();
+}
+
+/* ===================== GENERATIVE JAZZ ===================== */
+const Jazz=(()=>{
+  let started=false,on=false,master,noiseBuf,timer,nextTime=0,step=0,bar=0;
+  const bpm=82, spb=60/bpm, swing=0.6;
+  const N={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
+  const f=(n,o)=>{const m=12*(o+1)+N[n];return 440*Math.pow(2,(m-69)/12);};
+  // ii–V–I–vi in C: Dm7, G7, Cmaj7, Am7
+  const COMP=[
+    [['D',3],['F',3],['A',3],['C',4]],
+    [['F',3],['G',3],['B',3],['D',4]],
+    [['E',3],['G',3],['B',3],['D',4]],
+    [['E',3],['G',3],['A',3],['C',4]]
+  ];
+  const BASS=[
+    [['D',2],['A',2],['D',2],['F#',2]],
+    [['G',2],['D',2],['G',2],['B',2]],
+    [['C',2],['G',2],['C',2],['G#',2]],
+    [['A',2],['E',2],['A',2],['C#',2]]
+  ];
+  let compF=[],bassF=[];
+  function init(){
+    if(started) return; started=true;
+    master=actx.createGain(); master.gain.value=0; master.connect(actx.destination);
+    noiseBuf=actx.createBuffer(1,actx.sampleRate,actx.sampleRate);
+    const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    compF=COMP.map(ch=>ch.map(x=>f(x[0],x[1])));
+    bassF=BASS.map(ch=>ch.map(x=>f(x[0],x[1])));
+    nextTime=actx.currentTime+0.15; step=0; bar=0;
+    timer=setInterval(sched,25);
+  }
+  function env(g,t,a,d,peak){g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d);}
+  function bass(freq,t){
+    const o=actx.createOscillator(),g=actx.createGain(),lp=actx.createBiquadFilter();
+    o.type='triangle';o.frequency.value=freq;lp.type='lowpass';lp.frequency.value=650;
+    o.connect(lp);lp.connect(g);g.connect(master);env(g,t,0.012,spb*0.85,0.42);o.start(t);o.stop(t+spb);
+  }
+  function comp(freqs,t){
+    freqs.forEach((fr,i)=>{
+      const o=actx.createOscillator(),g=actx.createGain(),lp=actx.createBiquadFilter();
+      o.type=i%2?'sine':'triangle';o.frequency.value=fr;lp.type='lowpass';lp.frequency.value=2100;
+      o.connect(lp);lp.connect(g);g.connect(master);
+      const tt=t+Math.random()*0.012;env(g,tt,0.02,0.55,0.10);o.start(tt);o.stop(tt+0.75);
+    });
+  }
+  function brush(t,accent){
+    const s=actx.createBufferSource();s.buffer=noiseBuf;
+    const bp=actx.createBiquadFilter();bp.type='highpass';bp.frequency.value=3800;
+    const g=actx.createGain();s.connect(bp);bp.connect(g);g.connect(master);
+    env(g,t,0.005,accent?0.13:0.07,accent?0.085:0.045);s.start(t);s.stop(t+0.2);
+  }
+  function hat(t){
+    const s=actx.createBufferSource();s.buffer=noiseBuf;
+    const bp=actx.createBiquadFilter();bp.type='highpass';bp.frequency.value=7000;
+    const g=actx.createGain();s.connect(bp);bp.connect(g);g.connect(master);
+    env(g,t,0.002,0.03,0.03);s.start(t);s.stop(t+0.06);
+  }
+  function playStep(s,b,t){
+    if(s%2===0){const beat=s/2;bass(bassF[b][beat],t);brush(t,beat===1||beat===3);}
+    else{hat(t);if(s===3||s===7) comp(compF[b],t);else if(Math.random()<0.22) comp(compF[b],t);}
+  }
+  function sched(){
+    if(!actx) return;
+    while(nextTime<actx.currentTime+0.2){
+      playStep(step%8,bar%COMP.length,nextTime);
+      nextTime += (step%2===0)? swing*spb : (1-swing)*spb;
+      step++; if(step%8===0) bar++;
+    }
+  }
+  return {
+    init,
+    setOn(v){ if(!started) init(); on=v; master.gain.setTargetAtTime(v?0.6:0,actx.currentTime,0.4); },
+    isOn:()=>on
+  };
+})();
+
+/* ===================== SFX ===================== */
+let musicOn=true;
+function blip(freq,dur=.12,vol=.06,type='sine'){
+  if(!actx||!musicOn) return;
+  const o=actx.createOscillator(),g=actx.createGain();
+  o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(actx.destination);
+  g.gain.setValueAtTime(vol,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur);
+  o.start();o.stop(actx.currentTime+dur);
+}
+function chime(){ if(!actx||!musicOn)return; [523.25,659.25,783.99,1046.5].forEach((f,i)=>setTimeout(()=>blip(f,.5,.10,'sine'),i*90)); }
+function wrongSfx(){ blip(150,.18,.08,'sawtooth'); }
+
+/* ===================== VOICE (Professor Wobble speaks) ===================== */
+const Voice=(()=>{
+  let on=true,voice=null,supported='speechSynthesis' in window;
+  function pick(){
+    if(!supported) return;
+    const vs=speechSynthesis.getVoices(); if(!vs.length) return;
+    const pref=['Google UK English Male','Daniel','Microsoft George','Microsoft Ryan Online','Google UK English'];
+    for(const p of pref){const v=vs.find(v=>v.name.includes(p));if(v){voice=v;return;}}
+    voice=vs.find(v=>/en[-_]GB/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||vs[0];
+  }
+  if(supported){ pick(); speechSynthesis.onvoiceschanged=pick; }
+  function speak(t){
+    if(!on||!supported||!t) return;
+    try{
+      speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(t.replace(/\s+/g,' ').trim());
+      if(voice) u.voice=voice;
+      u.rate=0.96; u.pitch=0.8; u.volume=1;
+      const dot=$('hostDot');
+      u.onstart=()=>dot&&dot.classList.add('speaking');
+      u.onend=()=>dot&&dot.classList.remove('speaking');
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  return { speak, supported,
+    setOn(v){on=v; if(!v&&supported){try{speechSynthesis.cancel()}catch(e){}}},
+    isOn:()=>on };
+})();
+
+/* ===================== PROFILE / LOGIN ===================== */
+const PROVIDERS={google:{name:'Google',color:'#ea4335',display:'Google Thinker'},
+  facebook:{name:'Facebook',color:'#1877f2',display:'Facebook Thinker'},
+  guest:{name:'Guest',color:'#8b80a6',display:'Guest Thinker'}};
+function getProfile(){ try{return JSON.parse(localStorage.getItem('wobble_profile'))}catch(e){return null} }
+function setProfile(p){ localStorage.setItem('wobble_profile',JSON.stringify(p)); }
+function clearProfile(){ localStorage.removeItem('wobble_profile'); }
+
+function chooseLogin(prov){
+  ensureAudio();
+  const p=PROVIDERS[prov];
+  setProfile({provider:prov, name:p.display, color:p.color, ts:Date.now()});
+  enterStart(true);
+}
+function enterStart(greet){
+  const prof=getProfile()||PROVIDERS.guest;
+  const col=prof.color||'#8b80a6';
+  $('startAvatar').textContent=(prof.name||'G')[0];
+  $('startAvatar').style.background=col;
+  $('startName').textContent=prof.name||'Guest';
+  const line=`Ah — ${prof.name}. Pliable. Overconfident. Perfect. One hundred stages, only five percent finish. Shall we find out which percent you are?`;
+  $('startGreet').textContent='“'+line+'”';
+  showScreen('screen-start');
+  if(greet) setTimeout(()=>Voice.speak(line),350);
+}
+
+/* ===================== STAGES ===================== */
+function clone(g){return g.map(r=>r.slice());}
+function makeGrid(rows,cols,val=false){return Array.from({length:rows},()=>Array(cols).fill(val));}
+function applyToggle(g,r,c,wrap){
+  const R=g.length,C=g[0].length;
+  [[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([rr,cc])=>{
+    if(wrap){rr=(rr+R)%R;cc=(cc+C)%C;}
+    if(rr>=0&&rr<R&&cc>=0&&cc<C) g[rr][cc]=!g[rr][cc];
+  });
+}
+function deriveStart(target,scramble,wrap){const g=clone(target);scramble.forEach(([r,c])=>applyToggle(g,r,c,wrap));return g;}
+
+const STAGES=[
+  { type:'lightsout',tier:'Tier 1 · Logic',name:'Hello, Brain',count:'Stage 1 of 100',
+    rows:1,cols:3,wrap:false,target:[[true,true,true]],scramble:[[0,1]],goal:'light every node',
+    intro:"Tap a dot, it wakes up. Tap it again, it sulks. But careful — every dot here has clingy neighbours. Touch one, you touch its friends. Light all three.",
+    win:"Two seconds. A child could— well. Let's see if you're still smug at Stage 25.",profile:null,
+    hints:["Tapping a node toggles it AND the nodes touching it. You literally cannot fail this one. (I checked.)",
+      "Notice that tapping an edge node only flips two dots, but the middle one flips all three.",
+      "Tap the middle node. Once. That's it. We'll never speak of how you needed this."] },
+  { type:'lightsout',tier:'Tier 2 · Pattern Recognition',name:'The Fourth Frame',count:'Stage 25 of 100',
+    rows:4,cols:4,wrap:false,
+    target:[[false,true,true,false],[true,false,false,true],[true,false,false,true],[false,true,true,false]],
+    scramble:[[1,1],[2,2],[0,3],[3,0]],goal:'match the glowing pattern',
+    intro:"A pattern. How quaint. The goal isn't 'all on' this time — recreate the shape shown in the goal preview. Is it flipping, or is it turning? Choose wrong and I shall sigh audibly.",
+    win:"Hm. You're faster than the data suggested. Don't let it go to your head.",
+    profile:"Brain Profile update: you're trending — The Pattern Master.",
+    hints:["Forget 'all lit'. Your target is the diamond shown in the Goal preview. Match it exactly.",
+      "Each tap flips a plus-shape. Work corner by corner — fix the top row first, then march downward.",
+      "Undo a tap by tapping the same node again. Find the four taps that restore the ring."] },
+  { type:'sequence',tier:'Tier 4 · Lateral Thinking',name:'Read the Room',count:'Stage 75 of 100',
+    rows:5,cols:5,wrap:false,solution:[[2,2],[1,2],[1,3],[2,3],[2,4],[1,4]],goal:'find the path nobody pointed to',
+    intro:"Nothing on that board will save you, I'm afraid. Every link you draw is a polite little dead end. Stop forcing it — force is for people without imagination. Everything you need, I've already told you. Now then. Were you listening, or merely looking?",
+    win:"There it is. You stopped staring at the board and started reading me. THAT is lateral thinking.",
+    profile:"Brain Profile update: you're trending — The Lateral Thinker.",
+    hints:["You've tried the board forty times. The board is not the problem. WHERE ELSE on this screen is there information?",
+      "Don't read what I'm saying. Read how it's arranged. Look at the first letter of each line I spoke.",
+      "First letters: N, E, S, E, N. They're directions. Start at the centre node and walk them: North, East, South, East, North."] },
+  { type:'lightsout',tier:'Tier 5 · Abstract Strategy',name:'The Summit',count:'Stage 100 of 100',
+    rows:4,cols:4,wrap:true,foldable:true,moveLimit:12,hintsDisabled:true,
+    target:makeGrid(4,4,true),scramble:[[0,0],[3,3],[0,3],[2,1],[3,0]],
+    goal:'light every node — but the board was never flat',
+    intro:"No hints here. No me, whispering. Just you, and everything you learned pretending you weren't learning it. Fold it — you know how. Hold a node to fold the board. Show me the five percent.",
+    win:"…Well. Look at you.",profile:null,
+    hints:["No hints at the Summit. This is the wall. — Prof. Wobble"] }
+];
+
+/* ===================== STATE / RENDER ===================== */
+let S={},freeHints=5,hintsUsedTotal=0;
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+
+function loadStage(idx){
+  const def=STAGES[idx];
+  S={idx,def,
+    state:def.type==='lightsout'?deriveStart(def.target,def.scramble,def.wrap):makeGrid(def.rows,def.cols,false),
+    wrap:def.wrap&&!def.foldable?true:false,folded:false,moves:0,seq:0,hintIdx:0,won:false};
+  $('tierLabel').textContent=def.tier; $('stageName').textContent=def.name;
+  $('stageCount').textContent=def.count; $('goalText').textContent=def.goal;
+  typeHost(def.intro);
+  $('boardMsg').textContent=def.moveLimit?`Moves: 0 / ${def.moveLimit}`:'';
+  renderGoalMini(); render(); updateHintPill();
+}
+function typeHost(text,speakIt=true){
+  const el=$('hostLine'); el.textContent=''; let i=0;
+  clearInterval(typeHost._t);
+  typeHost._t=setInterval(()=>{el.textContent=text.slice(0,i++);if(i>text.length)clearInterval(typeHost._t);},14);
+  if(speakIt) Voice.speak(text);
+}
+function geom(){
+  const {rows,cols}=S.def; const vbW=100,vbH=Math.max(40,Math.round(100*rows/cols)),m=14;
+  const dx=cols>1?(vbW-2*m)/(cols-1):0, dy=rows>1?(vbH-2*m)/(rows-1):0;
+  const pos=(r,c)=>({x:cols>1?m+dx*c:vbW/2,y:rows>1?m+dy*r:vbH/2});
+  let r=Math.min(cols>1?dx:vbW,rows>1?dy:vbH)*0.30; r=Math.max(4,Math.min(13,r));
+  return {vbW,vbH,pos,r};
+}
+function render(){
+  const {def,state}=S; const {vbW,vbH,pos,r}=geom();
+  const svg=$('board'); svg.setAttribute('viewBox',`0 0 ${vbW} ${vbH}`); let html='';
+  for(let R=0;R<def.rows;R++)for(let C=0;C<def.cols;C++){
+    const a=pos(R,C);
+    if(C+1<def.cols){const b=pos(R,C+1);html+=`<line class="link" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;}
+    if(R+1<def.rows){const b=pos(R+1,C);html+=`<line class="link" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;}
+  }
+  if(S.folded){
+    for(let R=0;R<def.rows;R++){const a=pos(R,0),b=pos(R,def.cols-1);
+      html+=`<line class="link wrap" x1="${a.x}" y1="${a.y}" x2="${a.x-7}" y2="${a.y}"/><line class="link wrap" x1="${b.x}" y1="${b.y}" x2="${b.x+7}" y2="${b.y}"/>`;}
+    for(let C=0;C<def.cols;C++){const a=pos(0,C),b=pos(def.rows-1,C);
+      html+=`<line class="link wrap" x1="${a.x}" y1="${a.y}" x2="${a.x}" y2="${a.y-7}"/><line class="link wrap" x1="${b.x}" y1="${b.y}" x2="${b.x}" y2="${b.y+7}"/>`;}
+  }
+  for(let R=0;R<def.rows;R++)for(let C=0;C<def.cols;C++){
+    const p=pos(R,C),lit=state[R][C];
+    html+=`<circle class="node" data-r="${R}" data-c="${C}" cx="${p.x}" cy="${p.y}" r="${lit?r*1.05:r}"
+      fill="${lit?'var(--lit)':'#fff'}" stroke="${lit?'var(--lit-glow)':'var(--dark)'}" stroke-width="${lit?2.2:1.6}"
+      style="${lit?'filter:drop-shadow(0 0 5px var(--lit-glow))':''}"/>`;
+  }
+  svg.innerHTML=html; svg.querySelectorAll('.node').forEach(attachNode);
+}
+function renderGoalMini(){
+  const def=S.def,row=$('goalRow'); const old=$('goalMiniBox'); if(old) old.remove();
+  if(def.type==='lightsout'&&!def.target.flat().every(v=>v)){
+    const box=document.createElement('span'); box.id='goalMiniBox'; box.className='goal-mini';
+    const sz=10,gap=2,R=def.rows,C=def.cols; let svg=`<svg width="${C*(sz+gap)}" height="${R*(sz+gap)}">`;
+    for(let r=0;r<R;r++)for(let c=0;c<C;c++){const on=def.target[r][c];
+      svg+=`<circle cx="${c*(sz+gap)+sz/2}" cy="${r*(sz+gap)+sz/2}" r="${sz/2-1}" fill="${on?'#f4b46b':'#fff'}" stroke="#d8d2e4" stroke-width="1"/>`;}
+    svg+='</svg>'; box.innerHTML=svg; row.appendChild(box);
+  }
+}
+function attachNode(circle){
+  const r=+circle.dataset.r,c=+circle.dataset.c; let timer,longFired;
+  circle.addEventListener('pointerdown',e=>{e.preventDefault();longFired=false;
+    if(S.def.foldable) timer=setTimeout(()=>{longFired=true;doFold();},480);});
+  circle.addEventListener('pointerup',e=>{e.preventDefault();clearTimeout(timer);if(!longFired)tapNode(r,c);});
+  circle.addEventListener('pointercancel',()=>clearTimeout(timer));
+  circle.style.touchAction='none';
+}
+function doFold(){
+  if(S.folded) return; S.folded=true;S.wrap=true;
+  $('board').classList.add('folded'); setTimeout(()=>$('board').classList.remove('folded'),1100);
+  blip(330,.4,.07,'triangle');
+  $('boardMsg').textContent=`Folded ✓  ·  Moves: ${S.moves} / ${S.def.moveLimit}`;
+  typeHost("Mm. NOW you see it. Distant nodes are neighbours on a folded board. Five percent realise that. Finish it.");
+  render();
+}
+function tapNode(r,c){
+  if(S.won) return; const def=S.def;
+  if(def.type==='lightsout'){
+    if(def.moveLimit&&S.moves>=def.moveLimit){flashMsg("Out of moves. ↺ Reset and think.");wrongSfx();return;}
+    applyToggle(S.state,r,c,S.wrap); S.moves++; blip(560+Math.random()*80,.09,.05);
+    if(def.moveLimit) $('boardMsg').textContent=`${S.folded?'Folded ✓  ·  ':''}Moves: ${S.moves} / ${def.moveLimit}`;
+    render();
+    if(boardEquals(S.state,def.target)) winStage();
+    else if(def.moveLimit&&S.moves>=def.moveLimit) flashMsg("Out of moves. ↺ Reset.");
+  }else if(def.type==='sequence'){
+    const exp=def.solution[S.seq];
+    if(exp&&exp[0]===r&&exp[1]===c){S.state[r][c]=true;S.seq++;blip(500+S.seq*60,.12,.06);render();
+      if(S.seq>=def.solution.length) winStage();}
+    else{wrongSfx();flashMsg("…not it. The board won't help you. Re-read me.");S.seq=0;S.state=makeGrid(def.rows,def.cols,false);render();}
+  }
+}
+function boardEquals(a,b){return a.every((row,r)=>row.every((v,c)=>v===b[r][c]));}
+function flashMsg(t){const el=$('boardMsg');el.textContent=t;el.style.color='var(--wrong)';
+  setTimeout(()=>{el.style.color='var(--ink-soft)';el.textContent=S.def.moveLimit?`${S.folded?'Folded ✓  ·  ':''}Moves: ${S.moves} / ${S.def.moveLimit}`:'';},1600);}
+
+function winStage(){
+  S.won=true; chime(); sparkle(); const def=S.def;
+  if(def.count.startsWith('Stage 100')){ Voice.speak(def.win); setTimeout(showCertificate,900); return; }
+  $('winTitle').textContent='Cleared!';
+  let txt=def.win; if(def.profile) txt+='\n\n'+def.profile;
+  $('winText').textContent=txt; $('winText').style.whiteSpace='pre-line';
+  Voice.speak(def.win);
+  setTimeout(()=>$('winOverlay').classList.add('show'),650);
+}
+function sparkle(){
+  const burst=document.querySelector('#winOverlay .burst');
+  setTimeout(()=>{ if(!burst)return;
+    for(let i=0;i<10;i++){const s=document.createElement('div');s.className='spark';
+      const ang=(i/10)*Math.PI*2,d=40+Math.random()*10;s.style.background=i%2?'var(--lit)':'var(--accent)';
+      s.animate([{transform:'translate(-50%,-50%)',opacity:1},{transform:`translate(${Math.cos(ang)*d-3}px,${Math.sin(ang)*d-3}px)`,opacity:0}],{duration:700,easing:'ease-out'});
+      burst.appendChild(s); setTimeout(()=>s.remove(),750);}
+  },660);
+}
+function nextStage(){ $('winOverlay').classList.remove('show');
+  if(S.idx+1<STAGES.length) loadStage(S.idx+1); else showCertificate(); }
+
+/* ===================== HINTS + AD ===================== */
+function requestHint(){
+  const def=S.def;
+  if(def.hintsDisabled){ typeHost(def.hints[0]); flashMsg("No hints at the Summit."); return; }
+  if(S.hintIdx>=3||S.hintIdx>=def.hints.length){ flashMsg("No more hints for this stage."); return; }
+  if(S.hintIdx===0&&freeHints>0){ freeHints--; updateHintPill(); revealHint(); }
+  else openAd();
+}
+function revealHint(){
+  const def=S.def,i=S.hintIdx;
+  $('hintTitle').textContent=`Hint ${i+1} of ${Math.min(3,def.hints.length)}`;
+  $('hintText').textContent='“'+def.hints[i]+'”';
+  Voice.speak(def.hints[i]);
+  S.hintIdx++; hintsUsedTotal++; $('hintOverlay').classList.add('show'); updateHintPill();
+}
+function updateHintPill(){
+  $('hintCount').textContent=freeHints;
+  const willCostAd=!(S.hintIdx===0&&freeHints>0);
+  $('hintBtn').classList.toggle('ad',willCostAd&&!S.def.hintsDisabled);
+}
+function openAd(){ $('adOverlay').classList.add('show'); }
+function watchAd(){
+  const fake=$('adFake'),btn=$('adWatch'); btn.disabled=true; let n=3; fake.textContent='Advertisement · '+n;
+  const t=setInterval(()=>{n--;fake.textContent=n>0?('Advertisement · '+n):'Thanks for watching!';
+    if(n<=0){clearInterval(t);setTimeout(()=>{$('adOverlay').classList.remove('show');btn.disabled=false;fake.textContent='Watch a short clip for a hint';revealHint();},500);}},800);
+}
+
+/* ===================== CERTIFICATE ===================== */
+function showCertificate(){
+  let arch='The Strategic Maverick';
+  if(hintsUsedTotal===0) arch='The Pure Mind';
+  else if(hintsUsedTotal<=2) arch='The Strategic Maverick';
+  else if(hintsUsedTotal<=4) arch='The Lateral Thinker';
+  else arch='The Persistent Genius';
+  const prof=getProfile()||{name:'Anonymous'};
+  $('certWho').textContent='Awarded to '+(prof.name||'Anonymous');
+  $('certArch').textContent=arch;
+  const d=new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  $('certMeta').innerHTML=`Cleared all prototype stages · ${d}<br>Hints used: ${hintsUsedTotal} · You are the 5%`;
+  $('certOverlay').classList.add('show');
+}
+
+/* ===================== PICKER ===================== */
+function buildPicker(){
+  const list=$('pickList'); list.innerHTML='';
+  STAGES.forEach((s,i)=>{const b=document.createElement('button');b.className='btn btn-ghost';b.style.textAlign='left';
+    b.innerHTML=`<b>${s.count.replace(' of 100','')}</b> — ${s.name}<br><small style="color:var(--ink-soft)">${s.tier}</small>`;
+    b.onclick=()=>{$('pickOverlay').classList.remove('show');showScreen('screen-game');loadStage(i);};list.appendChild(b);});
+}
+
+/* ===================== WIRING ===================== */
+document.querySelectorAll('.sbtn').forEach(b=>b.onclick=()=>chooseLogin(b.dataset.prov));
+$('signOutLink').onclick=()=>{clearProfile();showScreen('screen-login');};
+$('beginBtn').onclick=()=>{ensureAudio();Jazz.setOn(musicOn);$('soundBtn').textContent=musicOn?'🔊':'🔈';showScreen('screen-game');loadStage(0);};
+$('pickBtn').onclick=()=>{buildPicker();$('pickOverlay').classList.add('show');};
+$('pickClose').onclick=()=>$('pickOverlay').classList.remove('show');
+$('menuBtn').onclick=()=>{buildPicker();$('pickOverlay').classList.add('show');};
+$('resetBtn').onclick=()=>{const kf=S.folded;loadStage(S.idx);if(S.def.foldable&&kf){S.folded=true;S.wrap=true;render();$('boardMsg').textContent=`Folded ✓  ·  Moves: 0 / ${S.def.moveLimit}`;}};
+$('hintBtn').onclick=requestHint;
+$('hintClose').onclick=()=>{$('hintOverlay').classList.remove('show');updateHintPill();};
+$('adWatch').onclick=watchAd;
+$('adClose').onclick=()=>$('adOverlay').classList.remove('show');
+$('adIap').onclick=()=>{$('adFake').textContent='💳 (Prototype) Hint Pack purchased!';setTimeout(()=>{$('adOverlay').classList.remove('show');revealHint();},700);};
+$('winNext').onclick=nextStage;
+$('certShare').onclick=()=>{ const prof=getProfile()||{name:'A thinker'};
+  const txt=`I just earned "${$('certArch').textContent}" on Wobble — Made to bend your mind. Only 5% finish. 🧠`;
+  if(navigator.share){navigator.share({title:'Wobble',text:txt}).catch(()=>{});}
+  else{ try{navigator.clipboard.writeText(txt);}catch(e){} $('certShare').textContent='Copied! ✓'; } };
+$('certRestart').onclick=()=>{freeHints=5;hintsUsedTotal=0;$('certOverlay').classList.remove('show');enterStart(false);};
+$('soundBtn').onclick=()=>{ensureAudio();musicOn=!musicOn;Jazz.setOn(musicOn);$('soundBtn').textContent=musicOn?'🔊':'🔈';$('soundBtn').classList.toggle('off',!musicOn);};
+$('voiceBtn').onclick=()=>{const v=!Voice.isOn();Voice.setOn(v);$('voiceBtn').classList.toggle('off',!v);};
+$('devSkip').onclick=()=>{if(S.idx+1<STAGES.length)loadStage(S.idx+1);else showCertificate();};
+
+/* ===================== BOOT ===================== */
+(function boot(){
+  if(!Voice.supported) $('voiceBtn').classList.add('off');
+  if(getProfile()) enterStart(false); else showScreen('screen-login');
+})();
+</script>
+</body>
+</html>
