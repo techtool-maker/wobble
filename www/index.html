@@ -152,6 +152,12 @@
   .cert .meta{font-size:11.5px;color:var(--ink-soft);margin-top:8px;line-height:1.6;}
   .cert .quote{font-style:italic;font-size:12.5px;margin-top:12px;color:var(--ink);}
   .dev{position:absolute;bottom:6px;right:10px;font-size:10px;color:var(--ink-soft);opacity:.55;cursor:pointer;z-index:5;}
+  #pickList{max-height:56vh;overflow-y:auto;text-align:left;}
+  .pick-tier{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent-deep);font-weight:700;margin:12px 0 5px;}
+  .pick-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+  .picknum{padding:9px 0;border:1px solid var(--line);background:var(--card);border-radius:9px;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;}
+  .picknum:active{transform:scale(.94);}
+  .picknum.sig{border-color:var(--lit);color:var(--accent-deep);box-shadow:0 0 0 1px var(--lit) inset;}
 </style>
 </head>
 <body>
@@ -176,7 +182,7 @@
     <div class="tag">Made to bend your mind</div>
     <div class="prof-bubble" id="startBubble"><span class="prof-name">Professor Wobble</span><span id="startGreet">…</span></div>
     <div class="who-row"><span class="avatar" id="startAvatar">?</span><span>Signed in as <b id="startName">Guest</b></span><span class="signout" id="signOutLink">sign out</span></div>
-    <div class="start-note">4 representative stages from across the 5 cognitive tiers. Tap a node to toggle it — everything is connected.</div>
+    <div class="start-note">All 100 stages across the 5 cognitive tiers. Tap a node to toggle it — everything is connected.</div>
     <div class="btn-row">
       <button class="btn btn-primary" id="beginBtn">Begin →</button>
       <button class="btn btn-ghost" id="pickBtn">Jump to a stage</button>
@@ -255,7 +261,7 @@
 
   <div class="overlay" id="pickOverlay"><div class="sheet">
     <h3>Choose a stage</h3>
-    <p>Prototype includes one stage from across the tiers.</p>
+    <p>All 100 stages — gold marks the signature puzzles.</p>
     <div id="pickList" style="display:flex;flex-direction:column;gap:8px"></div>
     <span class="link-tiny" id="pickClose">Close</span>
   </div></div>
@@ -427,7 +433,7 @@ function applyToggle(g,r,c,wrap){
 }
 function deriveStart(target,scramble,wrap){const g=clone(target);scramble.forEach(([r,c])=>applyToggle(g,r,c,wrap));return g;}
 
-const STAGES=[
+const SIG=[
   { type:'lightsout',tier:'Tier 1 · Logic',name:'Hello, Brain',count:'Stage 1 of 100',
     rows:1,cols:3,wrap:false,target:[[true,true,true]],scramble:[[0,1]],goal:'light every node',
     intro:"Tap a dot, it wakes up. Tap it again, it sulks. But careful — every dot here has clingy neighbours. Touch one, you touch its friends. Light all three.",
@@ -461,6 +467,99 @@ const STAGES=[
     win:"…Well. Look at you.",profile:null,
     hints:["No hints at the Summit. This is the wall. — Prof. Wobble"] }
 ];
+
+/* ---- procedural generation for the full 100-stage ladder ---- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const TIER_SKILL=['Logic','Pattern Recognition','Spatial Reasoning','Lateral Thinking','Abstract Strategy'];
+const NAME_ADJ=['Quiet','Folding','Hollow','Bright','Slow','Tangled','Silent','Crooked','Gentle','Restless','Velvet','Amber','Distant','Clever','Patient','Hidden','Loose','Sharp','Dim','Woven'];
+const NAME_NOUN=['Lattice','Static','Knot','Cascade','Drift','Cipher','Grid','Echo','Circuit','Maze','Signal','Current','Figure','Thread','Mirror','Spiral','Pulse','Frame','Web','Quanta'];
+const INTRO={
+ 0:["Warm-up. Light every node. Try not to look so pleased with yourself.","Logic, pure and simple. Clear the board — I'll wait.","Easy does it. Every tap disturbs the neighbours, so plan ahead."],
+ 1:["A shape to match, not merely 'all on'. Patterns reward the observant.","Recreate the figure in the goal preview. Symmetry is a hint, not a promise.","Stop lighting everything. Copy the shape exactly."],
+ 2:["Bigger board, same rules. Hold the whole thing in your head.","Space matters now. The edges may be closer than they appear.","Mind the geometry — and mind the corners."],
+ 3:["Assume nothing. The obvious move is rarely the one I left you.","If you're stuck, you're looking exactly where I want you to look.","There is a trick. There is always a trick."],
+ 4:["Everything you learned, all at once. No more gentle slopes.","The air is thin up here. Combine every tier's lesson.","This is where the ninety-five percent quietly close the app."]
+};
+const WINLINE={
+ 0:["Adequate.","There. Was that so hard?","Predictable. Onward."],
+ 1:["You see patterns. Good — so do I.","Tidy. The shape obeys you.","Recognised and resolved. Acceptable."],
+ 2:["You held the whole board in your head. Noted.","Spatially competent. Rare.","The corners didn't fool you. This time."],
+ 3:["You stopped trusting the obvious. Finally.","Sneaky. I approve.","You found the trick. I almost smiled."],
+ 4:["Few make it this far. Fewer keep going.","Still standing. Impressive — almost.","Even I didn't quite expect that."]
+};
+const HINT1=[
+ "Each tap flips a node and its neighbours. Fix the top row first.",
+ "Match the goal preview exactly — ignore nodes that are already correct.",
+ "Work in bands, top to bottom; the bottom row tends to fall into place.",
+ "The straightforward approach won't finish this — question an assumption.",
+ "Break it into the sub-skills from earlier tiers and solve them in order."
+];
+const ARCH=['The Methodical','The Pattern Master','The Spatial Architect','The Lateral Thinker','The Strategic Maverick'];
+
+function genStage(i){
+  const idx=i-1, tier=Math.min(4,Math.floor(idx/20)), k=idx%20, t=k/19;
+  const rnd=mulberry32(20260629+i*2654435761);
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  let n, wrap=false, foldable=false, mode='all';
+  if(tier===0){ n = i<=4?3:(t<0.6?3:4); }
+  else if(tier===1){ n = t<0.5?4:5; mode='pattern'; }
+  else if(tier===2){ n = t<0.4?4:(t<0.8?5:6); wrap = t>0.55; mode = rnd()<0.5?'pattern':'all'; }
+  else if(tier===3){ n = t<0.5?5:6; wrap=true; mode = rnd()<0.5?'pattern':'all'; }
+  else { n = t<0.4?5:6; wrap=true; mode = rnd()<0.4?'pattern':'all'; }
+  if([60,70,80,90].includes(i)){ foldable=true; wrap=true; }
+  const rows=n, cols=n;
+  let target;
+  if(mode==='pattern'){
+    const ptype=pick(['checker','border','diag','plus','halves']);
+    target=makeGrid(rows,cols,false);
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+      let on=false;
+      if(ptype==='checker') on=(r+c)%2===0;
+      else if(ptype==='border') on=(r===0||c===0||r===rows-1||c===cols-1);
+      else if(ptype==='diag') on=(r===c||r+c===rows-1);
+      else if(ptype==='plus') on=(r===Math.floor(rows/2)||c===Math.floor(cols/2));
+      else on=(r<rows/2);
+      target[r][c]=on;
+    }
+  } else target=makeGrid(rows,cols,true);
+  const ranges=[[1,3],[3,5],[4,7],[6,9],[7,11]][tier];
+  let cnt=Math.round(ranges[0]+(ranges[1]-ranges[0])*t);
+  cnt=Math.max(1,Math.min(cnt,rows*cols-1));
+  const cells=[]; for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)cells.push([r,c]);
+  for(let a=cells.length-1;a>0;a--){const b=Math.floor(rnd()*(a+1));const tmp=cells[a];cells[a]=cells[b];cells[b]=tmp;}
+  let scramble=cells.slice(0,cnt);
+  let guard=0;
+  while(boardEquals(deriveStart(target,scramble,wrap),target)&&scramble.length<cells.length&&guard++<5){
+    scramble=cells.slice(0,scramble.length+1);
+  }
+  const name=pick(NAME_ADJ)+' '+pick(NAME_NOUN);
+  let intro=pick(INTRO[tier]);
+  if(foldable) intro+=' (Hold a node to fold the board.)';
+  else if(wrap) intro+=' The edges wrap.';
+  const win=pick(WINLINE[tier]);
+  const h1=HINT1[tier];
+  let h2;
+  if(foldable) h2="Hidden neighbours: hold any node to FOLD the board, then opposite edges connect. Fold first.";
+  else if(wrap) h2="The board wraps — a tap on an edge also flips the opposite edge.";
+  else h2="Lights-out logic: clear the top row, then each tap below 'chases' the remaining lit nodes.";
+  const coords=scramble.map(([r,c])=>`(${r+1},${c+1})`).join(', ');
+  const h3=(foldable?'Fold first, then tap ':'The shortest solution — tap ')+coords+' (row, column).';
+  const goal = mode==='pattern' ? 'match the glowing pattern'
+            : foldable ? 'light every node — the board was never flat'
+            : wrap ? 'light every node — mind the wrapping edges'
+            : 'light every node';
+  const stage={ type:'lightsout', tier:`Tier ${tier+1} · ${TIER_SKILL[tier]}`, name, count:`Stage ${i} of 100`,
+    rows, cols, wrap, target, scramble, goal, intro, win,
+    profile:(i%10===0&&i!==100)?`Brain Profile checkpoint: you're playing like ${ARCH[tier]}.`:null,
+    hints:[h1,h2,h3] };
+  if(foldable) stage.foldable=true;
+  return stage;
+}
+function buildStages(){
+  const M={1:SIG[0],25:SIG[1],75:SIG[2],100:SIG[3]};
+  const out=[]; for(let i=1;i<=100;i++) out.push(M[i]||genStage(i)); return out;
+}
+const STAGES=buildStages();
 
 /* ===================== STATE / RENDER ===================== */
 let S={},freeHints=5,hintsUsedTotal=0;
@@ -624,9 +723,18 @@ function showCertificate(){
 /* ===================== PICKER ===================== */
 function buildPicker(){
   const list=$('pickList'); list.innerHTML='';
-  STAGES.forEach((s,i)=>{const b=document.createElement('button');b.className='btn btn-ghost';b.style.textAlign='left';
-    b.innerHTML=`<b>${s.count.replace(' of 100','')}</b> — ${s.name}<br><small style="color:var(--ink-soft)">${s.tier}</small>`;
-    b.onclick=()=>{$('pickOverlay').classList.remove('show');showScreen('screen-game');loadStage(i);};list.appendChild(b);});
+  for(let tc=0;tc<5;tc++){
+    const h=document.createElement('div'); h.className='pick-tier';
+    h.textContent=`Tier ${tc+1} · ${TIER_SKILL[tc]}`; list.appendChild(h);
+    const grid=document.createElement('div'); grid.className='pick-grid';
+    for(let j=0;j<20;j++){ const i=tc*20+j; const b=document.createElement('button');
+      b.textContent=i+1; b.className='picknum';
+      if([1,25,75,100].includes(i+1)) b.classList.add('sig');
+      b.onclick=()=>{$('pickOverlay').classList.remove('show');showScreen('screen-game');loadStage(i);};
+      grid.appendChild(b);
+    }
+    list.appendChild(grid);
+  }
 }
 
 /* ===================== WIRING ===================== */
